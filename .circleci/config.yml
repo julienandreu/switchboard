@@ -65,12 +65,12 @@ jobs:
           name: Install GIT
           command: |
             apk update && apk upgrade && apk add --no-cache git openssh
+      - run: yarn build && yarn pkg
       - run: yarn semantic-release
-      - run: yarn build
-      - run: yarn pkg
 
 workflows:
-  pr-workflow:
+  version: 2
+  setup_test_build:
     jobs:
       - setup
       - lint:
