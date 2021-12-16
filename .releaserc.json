@@ -1,0 +1,43 @@
+{
+  "branches": [
+    {
+      "name": "main"
+    },
+    {
+      "name": "next"
+    },
+    {
+      "name": "pre/rc",
+      "channel": "pre/rc",
+      "prerelease": "rc"
+    },
+    {
+      "name": "beta",
+      "channel": "beta",
+      "prerelease": "beta"
+    }
+  ],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          {
+            "path": "dist/switchboard-linux",
+            "label": "Linux distribution x64"
+          },
+          {
+            "path": "dist/switchboard-macos",
+            "label": "Mac OS distribution x64"
+          },
+          {
+            "path": "dist/switchboard-win.exe",
+            "label": "Windows distribution x64"
+          }
+        ]
+      }
+    ]
+  ]
+}

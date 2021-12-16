@@ -1,0 +1,93 @@
+version: 2.1
+
+aliases:
+  - &docker
+    - image: node:16-alpine
+  - &key_yarn_cache v1-node-{{ arch }}-{{ checksum "yarn.lock" }}-yarn
+  - &key_node_modules v1-node-{{ arch }}-{{ .Branch }}-{{ checksum "yarn.lock" }}-node-modules
+  - &restore_yarn_cache
+    restore_cache:
+      name: Restore yarn cache
+      key: *key_yarn_cache
+      paths:
+        - ~/.cache/yarn
+  - &restore_node_modules
+    restore_cache:
+      name: Restore node_modules cache
+      key: *key_node_modules
+      paths:
+        - node_modules
+
+jobs:
+  setup:
+    docker: *docker
+    steps:
+      - checkout
+      - run:
+          name: Nodejs Version
+          command: node --version
+      - *restore_yarn_cache
+      - run:
+          name: Install Packages
+          command: yarn --frozen-lockfile --cache-folder ~/.cache/yarn
+      - save_cache:
+          name: Save yarn cache for future installs
+          key: *key_yarn_cache
+          paths:
+            - ~/.cache/yarn
+      - save_cache:
+          name: Save node_modules cache
+          key: *key_node_modules
+          paths:
+            - node_modules
+
+  lint:
+    docker: *docker
+    steps:
+      - checkout
+      - *restore_node_modules
+      - run: yarn lint
+      - run: yarn prettier
+
+  unit-tests:
+    docker: *docker
+    steps:
+      - checkout
+      - *restore_node_modules
+      - run: yarn test --ci
+
+  release:
+    docker: *docker
+    steps:
+      - checkout
+      - *restore_node_modules
+      - run:
+          name: Install GIT
+          command: |
+            apk update && apk upgrade && apk add --no-cache git openssh
+      - run: yarn semantic-release
+      - run: yarn build
+      - run: yarn pkg
+
+workflows:
+  pr-workflow:
+    jobs:
+      - setup
+      - lint:
+          requires:
+            - setup
+      - unit-tests:
+          requires:
+            - setup
+      - release:
+          requires:
+            - setup
+            - lint
+            - unit-tests
+          filters:
+            branches:
+              only:
+                - main
+                - next
+                - pre/rc
+                - beta
