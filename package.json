@@ -1,6 +1,6 @@
 {
   "name": "@julienandreu/switchboard",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "API Tunnel",
   "main": "build/index.js",
   "bin": {
