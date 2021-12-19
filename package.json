@@ -4,7 +4,7 @@
   "description": "API Tunnel",
   "main": "build/index.js",
   "bin": {
-    "switchboard": "./build/index.js"
+    "api-switchboard": "./build/index.js"
   },
   "repository": "git@github.com:julienandreu/switchboard.git",
   "author": "Julien Andreu <julienandreu@me.com>",
@@ -47,6 +47,7 @@
     "test": "jest",
     "dev": "ts-node --files src/index.ts",
     "build": "tsc -p tsconfig.json",
+    "postbuild": "echo \"#!/usr/bin/env node\n\n$(cat ./build/index.js)\" > ./build/index.js",
     "pkg": "pkg package.json --compress Brotli",
     "commit": "commit",
     "semantic-release": "semantic-release"
