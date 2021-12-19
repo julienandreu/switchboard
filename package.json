@@ -69,6 +69,7 @@
     "npm": "Please use yarn instead of NPM to install dependencies"
   },
   "dependencies": {
-    "commander": "^8.3.0"
+    "commander": "^8.3.0",
+    "fp-ts": "^2.11.5"
   }
 }
