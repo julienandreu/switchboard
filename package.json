@@ -1,5 +1,5 @@
 {
-  "name": "@julienandreu/switchboard",
+  "name": "api-switchboard",
   "version": "1.0.0",
   "description": "API Tunnel",
   "main": "build/index.js",
