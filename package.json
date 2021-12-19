@@ -10,8 +10,9 @@
   "author": "Julien Andreu <julienandreu@me.com>",
   "license": "MIT",
   "keywords": [
-    "API",
-    "Tunnel"
+    "api",
+    "switchboard",
+    "tunnel"
   ],
   "devDependencies": {
     "@commitlint/cli": "^15.0.0",
@@ -41,14 +42,15 @@
     "typescript": "^4.5.4"
   },
   "scripts": {
-    "clean": "rm -rf dist build package",
+    "clean": "rm -rf yarn.lock node_modules dist build package",
     "lint": "eslint src --ext .ts",
     "prettier": "prettier .",
     "test": "jest",
     "dev": "ts-node --files src/index.ts",
-    "build": "tsc -p tsconfig.json",
-    "postbuild": "echo \"#!/usr/bin/env node\n\n$(cat ./build/index.js)\" > ./build/index.js",
     "pkg": "pkg package.json --compress Brotli",
+    "prebuild": "rm -rf dist build package tsconfig.tsbuildinfo",
+    "build": "tsc -p tsconfig.json",
+    "postbuild": "echo \"#!/usr/bin/env node\n\n$(cat ./build/index.js)\" > ./build/index.js && yarn pkg",
     "commit": "commit",
     "semantic-release": "semantic-release"
   },
@@ -61,5 +63,9 @@
     ],
     "outputPath": "dist"
   },
-  "support": true
+  "support": true,
+  "engines": {
+    "node": "^12.20.0 || ^14.15.0 || ^16.10.0",
+    "npm": "Please use yarn instead of NPM to install dependencies"
+  }
 }
