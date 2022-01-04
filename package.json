@@ -4,7 +4,7 @@
   "description": "API Tunnel",
   "main": "build/index.js",
   "bin": {
-    "api-switchboard": "./build/index.js"
+    "api-switchboard": "build/index.js"
   },
   "repository": "git@github.com:julienandreu/switchboard.git",
   "author": "Julien Andreu <julienandreu@me.com>",
@@ -28,6 +28,7 @@
     "@types/node": "^17.0.0",
     "@typescript-eslint/eslint-plugin": "^5.7.0",
     "@typescript-eslint/parser": "^5.7.0",
+    "@vercel/ncc": "^0.33.1",
     "esbuild": "^0.14.5",
     "eslint": "^8.4.1",
     "eslint-config-prettier": "^8.3.0",
@@ -42,26 +43,34 @@
     "typescript": "^4.5.4"
   },
   "scripts": {
-    "clean": "rm -rf yarn.lock node_modules dist build package",
+    "clean": "rm -rf yarn.lock node_modules bin dist build package tsconfig.tsbuildinfo",
     "lint": "eslint src --ext .ts",
     "prettier": "prettier --write src",
     "test": "jest",
     "dev": "ts-node --files src/index.ts",
-    "pkg": "pkg package.json --compress Brotli",
-    "prebuild": "rm -rf dist build package tsconfig.tsbuildinfo",
-    "build": "tsc -p tsconfig.json",
-    "postbuild": "echo \"#!/usr/bin/env node\n\n$(cat ./build/index.js)\" > ./build/index.js && yarn pkg",
+    "manifest:update": "node scripts/update-manifest.js",
+    "build:clean": "rm -rf dist build bin package tsconfig.tsbuildinfo",
+    "build:ts": "tsc -p tsconfig.json",
+    "build:ncc": "ncc build --no-cache --no-source-map-register --minify --out dist",
+    "build:shebang": "node scripts/add-shebang.js",
+    "build:pkg": "pkg package.json --compress Brotli",
+    "build": "yarn build:clean && yarn build:ts && yarn build:ncc && yarn build:shebang && yarn build:pkg",
     "commit": "commit",
     "semantic-release": "semantic-release"
   },
   "pkg": {
-    "scripts": "build/**/*.js",
+    "assets": [
+      "node_modules/**/*"
+    ],
+    "scripts": [
+      "dist/index.js"
+    ],
     "targets": [
       "node16-win-x64",
       "node16-linux-x64",
       "node16-macos-x64"
     ],
-    "outputPath": "dist"
+    "outputPath": "bin"
   },
   "support": true,
   "engines": {
