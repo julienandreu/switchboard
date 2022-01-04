@@ -17,8 +17,9 @@ describe('main', () => {
     expect(pipeMock).toBeCalledWith(
       expectedOptions.name,
       P.createProgram,
-      expect.any(Function), // addVersion,
-      expect.any(Function), // addDescription,
+      expect.any(Function), // addVersion
+      expect.any(Function), // addDescription
+      expect.any(Function), // parseArguments
       log,
     );
     expect(addVersionMock).toHaveBeenCalledWith(expectedOptions.version);

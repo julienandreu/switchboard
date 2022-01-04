@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { addDescription, addVersion, createProgram } from '../program';
+import { addDescription, addVersion, createProgram, parseArguments } from '../program';
 
 describe('program', () => {
   describe('createProgram', () => {
@@ -15,7 +15,7 @@ describe('program', () => {
       const program = new Command();
       const programVersionMock = jest.spyOn(program, 'version').mockImplementation();
       addVersion(expectedVersion)(program);
-      expect(programVersionMock).toBeCalledWith(expectedVersion);
+      expect(programVersionMock).toBeCalledWith(expectedVersion, '-v, --version');
       programVersionMock.mockRestore();
     });
     it('should return the program', () => {
@@ -38,8 +38,23 @@ describe('program', () => {
     it('should return the program', () => {
       const expectedDescription = 'description';
       const program = new Command();
-      const versionedProgram = addDescription(expectedDescription)(program);
-      expect(versionedProgram).toBeInstanceOf(Command);
+      const describedProgram = addDescription(expectedDescription)(program);
+      expect(describedProgram).toBeInstanceOf(Command);
+    });
+  });
+
+  describe('parseArguments', () => {
+    it('should parse arguments', () => {
+      const program = new Command();
+      const programParseMock = jest.spyOn(program, 'parse').mockImplementation();
+      parseArguments(program);
+      expect(programParseMock).toBeCalledTimes(1);
+      programParseMock.mockRestore();
+    });
+    it('should return the program', () => {
+      const program = new Command();
+      const parsedProgram = parseArguments(program);
+      expect(parsedProgram).toBeInstanceOf(Command);
     });
   });
 });
