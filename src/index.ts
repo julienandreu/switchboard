@@ -1,3 +1,4 @@
 import { main } from './cli';
+import { description, name, version } from './assets/manifest.json';
 
-main();
+main({ name, version, description });
