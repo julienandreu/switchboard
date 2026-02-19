@@ -1,0 +1,36 @@
+{
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "targets": {
+          "node": "6"
+        },
+        "modules": false,
+        "loose": true
+      }
+    ]
+  ],
+  "plugins": [
+    [
+      "babel-plugin-inline-import",
+      {
+        "extensions": [
+        ]
+      }
+    ],
+    [
+      "@babel/plugin-proposal-function-bind"
+    ],
+    [
+      "@babel/plugin-transform-modules-commonjs"
+    ],
+    [
+      "@babel/plugin-transform-runtime",
+      {
+        "absoluteRuntime": true,
+        "regenerator": true
+      }
+    ]
+  ]
+}

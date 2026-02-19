@@ -1,0 +1,16 @@
+__tests__/fixtures
+tmp
+lib
+lib-legacy
+node_modules
+coverage
+gulpfile.js
+webpack.config.js
+jest.config.js
+scripts
+updates
+artifacts
+dist
+packages
+bin
+.eslintrc.js

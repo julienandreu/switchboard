@@ -1,0 +1,20 @@
+# All routes would be broadcast to localhost:8080/star
+'*':
+  - http://localhost:8080/star
+# Routes '/origin' would be broadcast to localhost:8080/origin
+origin:
+  - http://localhost:8080/origin
+    # Routes '/origin/:id' would be broadcast to localhost:8080/origin
+origin/:id:
+  - http://localhost:8080/origin/param-id-equal_:id_-end
+# Routes '/qa' would be broadcast to many targets
+qa:
+  - http://localhost:8080/qa-1
+  - http://localhost:8080/qa-2
+  - http://localhost:8080/qa-3
+  - https://rsi.local.dev/pledge-store/api/tax-api/v1/QA-1
+  - https://rsi.local.dev/pledge-store/api/tax-api/v1/QA-2
+  - https://rsi.local.dev/pledge-store/api/tax-api/v1/QA-3
+# Routes '/qa*' would be broadcast to localhost:8080/qa-star
+qa*:
+  - http://localhost:8080/qa-star

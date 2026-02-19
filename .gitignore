@@ -1,0 +1,13 @@
+*.log
+
+/node_modules
+/build
+/bin
+/coverage
+/dist
+/dist-debug
+/artifacts
+
+.idea
+.vscode/
+.yarn-meta
