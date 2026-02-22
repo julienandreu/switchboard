@@ -1,0 +1,13 @@
+routes:
+  - path: "/api/orders/:id"
+    methods: ["GET", "POST"]
+    targets:
+      - url: "http://primary-service:8080/orders/:id"
+        primary: true
+      - url: "http://analytics:9090/ingest/orders/:id"
+        timeout: 2000
+
+  - path: "/api/health"
+    methods: ["GET"]
+    targets:
+      - url: "http://internal-service:8080/health"

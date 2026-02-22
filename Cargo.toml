@@ -1,0 +1,97 @@
+[package]
+name = "switchboard"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.80"
+authors = ["Julien Andreu <julienandreu@me.com>"]
+description = "HTTP request broadcasting proxy"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/julienandreu/switchboard"
+keywords = ["proxy", "http", "broadcast", "fanout", "reverse-proxy"]
+categories = ["network-programming", "web-programming::http-server"]
+
+[features]
+default = ["yaml"]
+
+# File-based config
+yaml = ["dep:serde_yml"]
+json = []
+toml = ["dep:toml"]
+
+# Database config
+sqlite = ["dep:sqlx", "sqlx/sqlite", "sqlx/runtime-tokio"]
+redis = ["dep:redis"]
+dynamodb = ["dep:aws-sdk-dynamodb", "dep:aws-config"]
+postgres = ["dep:sqlx", "sqlx/postgres", "sqlx/runtime-tokio"]
+mongodb = ["dep:mongodb"]
+
+# Observability
+sentry-integration = ["dep:sentry", "dep:sentry-tracing"]
+
+# Bundles
+file-backends = ["yaml", "json", "toml"]
+db-backends = ["sqlite", "redis", "dynamodb", "postgres", "mongodb"]
+full = ["file-backends", "db-backends", "sentry-integration"]
+
+[dependencies]
+# Async runtime — minimal features only
+tokio = { version = "1", features = ["rt-multi-thread", "net", "macros", "signal", "time", "sync", "fs"] }
+
+# HTTP server
+axum = { version = "0.8", default-features = false, features = ["tokio", "json", "http1"] }
+tower = { version = "0.5", default-features = false, features = ["util"] }
+tower-http = { version = "0.6", default-features = false, features = ["trace", "timeout", "limit"] }
+
+# HTTP client (reuses hyper from axum — zero marginal cost)
+hyper = { version = "1", features = ["http1", "client"] }
+hyper-util = { version = "0.1", features = ["tokio", "client-legacy", "http1"] }
+hyper-rustls = { version = "0.27", default-features = false, features = ["http1", "tls12", "ring", "logging", "webpki-roots"] }
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
+http-body-util = "0.1"
+http = "1"
+bytes = "1"
+
+# CLI
+clap = { version = "4", features = ["derive", "env"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Logging — Targets filter, NOT EnvFilter (avoids regex, saves ~1.1 MiB)
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "json", "ansi"] }
+
+# Utilities
+uuid = { version = "1", features = ["v4"] }
+url = { version = "2", features = ["serde"] }
+thiserror = "2"
+async-trait = "0.1"
+sha2 = "0.10"
+
+# File config (optional)
+serde_yml = { version = "0.0.12", optional = true }
+toml = { version = "0.8", optional = true }
+
+# Database config (optional)
+sqlx = { version = "0.8", optional = true, default-features = false }
+redis = { version = "0.27", features = ["tokio-comp"], optional = true }
+aws-sdk-dynamodb = { version = "1", optional = true }
+aws-config = { version = "1", optional = true }
+mongodb = { version = "3", optional = true }
+
+# Sentry (optional)
+sentry = { version = "0.35", optional = true, default-features = false, features = ["rustls", "reqwest", "tracing", "panic"] }
+sentry-tracing = { version = "0.35", optional = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["test-util"] }
+reqwest = { version = "0.12", default-features = false, features = ["json"] }
+
+[profile.release]
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+strip = true
+panic = "abort"

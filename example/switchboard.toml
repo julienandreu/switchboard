@@ -1,0 +1,18 @@
+[[routes]]
+path = "/api/orders/:id"
+methods = ["GET", "POST"]
+
+[[routes.targets]]
+url = "http://primary-service:8080/orders/:id"
+primary = true
+
+[[routes.targets]]
+url = "http://analytics:9090/ingest/orders/:id"
+timeout = 2000
+
+[[routes]]
+path = "/api/health"
+methods = ["GET"]
+
+[[routes.targets]]
+url = "http://internal-service:8080/health"

@@ -1,0 +1,56 @@
+# Switchboard — Full configuration example
+# https://github.com/julienandreu/switchboard
+
+defaults:
+  timeout: 5000
+  forward_headers: true
+  proxy_headers: true
+  strip_hop_by_hop: true
+  headers:
+    add:
+      X-Proxy: "switchboard"
+    strip: []
+
+routes:
+  # Exact match with multiple targets (broadcasting)
+  - path: "/api/orders/:id"
+    methods: ["GET", "POST", "PUT"]
+    timeout: 10000
+    headers:
+      add:
+        X-Source-Route: "/api/orders/:id"
+      strip: ["Cookie"]
+    targets:
+      - url: "http://primary-service:8080/orders/:id"
+        primary: true
+        timeout: 8000
+      - url: "http://analytics:9090/ingest/orders/:id"
+        timeout: 2000
+      - url: "http://audit-log:9091/orders/:id"
+
+  # Multi-param route
+  - path: "/api/users/:user_id/orders/:order_id"
+    methods: ["GET"]
+    targets:
+      - url: "http://primary-service:8080/users/:user_id/orders/:order_id"
+        primary: true
+      - url: "http://analytics:9090/user-orders/:user_id/:order_id"
+
+  # Wildcard: everything under /webhooks/ goes to two targets
+  - path: "/webhooks/*"
+    targets:
+      - url: "http://webhook-handler:8080"
+        primary: true
+      - url: "http://webhook-logger:9090"
+        timeout: 1000
+
+  # Simple health proxy
+  - path: "/api/health"
+    methods: ["GET"]
+    targets:
+      - url: "http://internal-service:8080/health"
+
+  # Catch-all: everything else goes to the default backend
+  - path: "/*"
+    targets:
+      - url: "http://default-backend:8080"
