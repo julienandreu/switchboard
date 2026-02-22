@@ -27,26 +27,49 @@ postgres = ["dep:sqlx", "sqlx/postgres", "sqlx/runtime-tokio"]
 mongodb = ["dep:mongodb"]
 
 # Observability
+actuator = []
 sentry-integration = ["dep:sentry", "dep:sentry-tracing"]
 
 # Bundles
 file-backends = ["yaml", "json", "toml"]
 db-backends = ["sqlite", "redis", "dynamodb", "postgres", "mongodb"]
-full = ["file-backends", "db-backends", "sentry-integration"]
+full = ["file-backends", "db-backends", "actuator", "sentry-integration"]
 
 [dependencies]
 # Async runtime — minimal features only
-tokio = { version = "1", features = ["rt-multi-thread", "net", "macros", "signal", "time", "sync", "fs"] }
+tokio = { version = "1", features = [
+  "rt-multi-thread",
+  "net",
+  "macros",
+  "signal",
+  "time",
+  "sync",
+  "fs",
+] }
 
 # HTTP server
-axum = { version = "0.8", default-features = false, features = ["tokio", "json", "http1"] }
+axum = { version = "0.8", default-features = false, features = [
+  "tokio",
+  "json",
+  "http1",
+] }
 tower = { version = "0.5", default-features = false, features = ["util"] }
-tower-http = { version = "0.6", default-features = false, features = ["trace", "timeout", "limit"] }
+tower-http = { version = "0.6", default-features = false, features = [
+  "trace",
+  "timeout",
+  "limit",
+] }
 
 # HTTP client (reuses hyper from axum — zero marginal cost)
 hyper = { version = "1", features = ["http1", "client"] }
 hyper-util = { version = "0.1", features = ["tokio", "client-legacy", "http1"] }
-hyper-rustls = { version = "0.27", default-features = false, features = ["http1", "tls12", "ring", "logging", "webpki-roots"] }
+hyper-rustls = { version = "0.27", default-features = false, features = [
+  "http1",
+  "tls12",
+  "ring",
+  "logging",
+  "webpki-roots",
+] }
 rustls = { version = "0.23", default-features = false, features = ["ring"] }
 http-body-util = "0.1"
 http = "1"
@@ -61,7 +84,11 @@ serde_json = "1"
 
 # Logging — Targets filter, NOT EnvFilter (avoids regex, saves ~1.1 MiB)
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "json", "ansi"] }
+tracing-subscriber = { version = "0.3", default-features = false, features = [
+  "fmt",
+  "json",
+  "ansi",
+] }
 
 # Utilities
 uuid = { version = "1", features = ["v4"] }
@@ -82,12 +109,22 @@ aws-config = { version = "1", optional = true }
 mongodb = { version = "3", optional = true }
 
 # Sentry (optional)
-sentry = { version = "0.35", optional = true, default-features = false, features = ["rustls", "reqwest", "tracing", "panic"] }
+sentry = { version = "0.35", optional = true, default-features = false, features = [
+  "rustls",
+  "reqwest",
+  "tracing",
+  "panic",
+] }
 sentry-tracing = { version = "0.35", optional = true }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["test-util"] }
 reqwest = { version = "0.12", default-features = false, features = ["json"] }
+
+[dev-dependencies.cargo-husky]
+version = "1"
+default-features = false
+features = ["user-hooks"]
 
 [profile.release]
 opt-level = "z"

@@ -24,9 +24,32 @@ fn default_methods() -> Vec<String> {
 #[serde(deny_unknown_fields)]
 pub struct Config {
     #[serde(default)]
+    pub actuator: ActuatorConfig,
+
+    #[serde(default)]
     pub defaults: Defaults,
 
     pub routes: Vec<Route>,
+}
+
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ActuatorConfig {
+    #[serde(default)]
+    pub enabled: bool,
+
+    #[serde(default)]
+    pub auth: ActuatorAuth,
+}
+
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct ActuatorAuth {
+    #[serde(default)]
+    pub username: Option<String>,
+
+    #[serde(default)]
+    pub password: Option<String>,
 }
 
 impl Config {

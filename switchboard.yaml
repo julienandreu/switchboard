@@ -1,6 +1,0 @@
-# Switchboard config — https://github.com/julienandreu/switchboard
-
-routes:
-  - path: "/example"
-    targets:
-      - url: "https://www.google.com"

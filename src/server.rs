@@ -9,6 +9,10 @@
 use std::sync::atomic::AtomicU64;
 use std::time::{Duration, Instant};
 
+use crate::config::model::Config;
+use crate::config::ConfigVersion;
+use crate::health::health_handler;
+use crate::proxy;
 use axum::routing::get;
 use axum::Router;
 use hyper_util::client::legacy::Client;
@@ -18,11 +22,6 @@ use tokio::sync::RwLock;
 use tower::ServiceBuilder;
 use tower_http::limit::RequestBodyLimitLayer;
 use tower_http::trace::TraceLayer;
-
-use crate::config::model::Config;
-use crate::config::ConfigVersion;
-use crate::health::health_handler;
-use crate::proxy;
 
 #[derive(Debug)]
 pub struct LoadedConfig {
@@ -36,6 +35,8 @@ pub struct LoadedConfig {
 pub struct Stats {
     pub forwarded: AtomicU64,
     pub failed: AtomicU64,
+    pub active_requests: AtomicU64,
+    pub config_reloads: AtomicU64,
 }
 
 impl Default for Stats {
@@ -50,9 +51,17 @@ impl Stats {
         Self {
             forwarded: AtomicU64::new(0),
             failed: AtomicU64::new(0),
+            active_requests: AtomicU64::new(0),
+            config_reloads: AtomicU64::new(0),
         }
     }
 }
+
+#[cfg(feature = "actuator")]
+pub type LogReloadHandle = tracing_subscriber::reload::Handle<
+    tracing_subscriber::filter::Targets,
+    tracing_subscriber::Registry,
+>;
 
 pub type HttpsConnector =
     hyper_rustls::HttpsConnector<hyper_util::client::legacy::connect::HttpConnector>;
@@ -64,6 +73,10 @@ pub struct AppState {
     pub start_time: Instant,
     pub namespace: String,
     pub stats: Stats,
+    #[cfg(feature = "actuator")]
+    pub log_reload_handle: Option<LogReloadHandle>,
+    #[cfg(feature = "actuator")]
+    pub current_log_level: RwLock<String>,
 }
 
 #[must_use]
@@ -84,8 +97,23 @@ pub fn build_http_client() -> HttpClient {
 }
 
 pub fn build_router(state: Arc<AppState>, max_body: usize) -> Router {
-    Router::new()
-        .route("/health", get(health_handler))
+    let router = Router::new().route("/health", get(health_handler));
+
+    #[cfg(feature = "actuator")]
+    let router = router.nest(
+        "/actuator",
+        crate::actuator::actuator_router()
+            .layer(axum::middleware::from_fn_with_state(
+                state.clone(),
+                crate::actuator::basic_auth_guard,
+            ))
+            .layer(axum::middleware::from_fn_with_state(
+                state.clone(),
+                crate::actuator::actuator_enabled_guard,
+            )),
+    );
+
+    router
         .fallback(proxy::forward_handler)
         .layer(
             ServiceBuilder::new()

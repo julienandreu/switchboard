@@ -21,9 +21,23 @@ use axum::response::{IntoResponse, Response};
 
 use crate::server::AppState;
 
-#[allow(clippy::significant_drop_tightening)]
 pub async fn forward_handler(
     State(state): State<Arc<AppState>>,
+    connect_info: ConnectInfo<SocketAddr>,
+    method: Method,
+    uri: Uri,
+    req_headers: HeaderMap,
+    body: Bytes,
+) -> Response {
+    state.stats.active_requests.fetch_add(1, Ordering::Relaxed);
+    let response = forward_inner(&state, connect_info, method, uri, req_headers, body).await;
+    state.stats.active_requests.fetch_sub(1, Ordering::Relaxed);
+    response
+}
+
+#[allow(clippy::significant_drop_tightening)]
+async fn forward_inner(
+    state: &Arc<AppState>,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     method: Method,
     uri: Uri,

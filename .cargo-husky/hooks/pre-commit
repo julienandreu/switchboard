@@ -1,0 +1,21 @@
+#!/bin/sh
+set -e
+
+echo "Running pre-commit checks..."
+
+echo "Formatting code..."
+cargo fmt
+
+echo "Staging formatted files..."
+FORMATTED_FILES=$(git diff --name-only)
+if [ -n "$FORMATTED_FILES" ]; then
+    echo "$FORMATTED_FILES" | xargs git add
+fi
+
+echo "Running clippy..."
+cargo clippy --all-features -- -D warnings -A dead_code
+
+echo "Running tests..."
+cargo test --all-features
+
+echo "All checks passed."

@@ -18,6 +18,10 @@ use crate::server::{self, AppState, LoadedConfig, Stats};
 
 pub async fn execute(args: RunArgs) -> Result<(), SwitchboardError> {
     let log_format = logging::resolve_format(args.pretty, args.json);
+
+    #[cfg(feature = "actuator")]
+    let log_reload_handle = logging::init(&args.log_level, log_format);
+    #[cfg(not(feature = "actuator"))]
     logging::init(&args.log_level, log_format);
 
     #[cfg(feature = "sentry-integration")]
@@ -34,16 +38,40 @@ pub async fn execute(args: RunArgs) -> Result<(), SwitchboardError> {
         config.defaults.timeout = args.timeout;
     }
 
+    // Apply env var overrides for actuator auth
+    if let Ok(username) = std::env::var("ACTUATOR_AUTH_USERNAME") {
+        config.actuator.auth.username = Some(username);
+    }
+    if let Ok(password) = std::env::var("ACTUATOR_AUTH_PASSWORD") {
+        config.actuator.auth.password = Some(password);
+    }
+
     let route_count = config.routes.len();
     let target_count = config.total_targets();
 
+    let loaded_config = tokio::sync::RwLock::new(LoadedConfig {
+        config: Arc::new(config),
+        version,
+        source_name: resolver.primary_name().to_string(),
+        loaded_at: Instant::now(),
+    });
+
+    #[cfg(feature = "actuator")]
     let state = Arc::new(AppState {
-        config: tokio::sync::RwLock::new(LoadedConfig {
-            config: Arc::new(config),
-            version,
-            source_name: resolver.primary_name().to_string(),
-            loaded_at: Instant::now(),
-        }),
+        config: loaded_config,
+        http_client: server::build_http_client(),
+        start_time: Instant::now(),
+        namespace: args.namespace.clone(),
+        stats: Stats::new(),
+        log_reload_handle: Some(log_reload_handle),
+        current_log_level: tokio::sync::RwLock::new(
+            format!("{}", args.log_level.to_tracing_level()).to_uppercase(),
+        ),
+    });
+
+    #[cfg(not(feature = "actuator"))]
+    let state = Arc::new(AppState {
+        config: loaded_config,
         http_client: server::build_http_client(),
         start_time: Instant::now(),
         namespace: args.namespace.clone(),
@@ -245,6 +273,10 @@ async fn config_refresh_loop(
                         loaded.version = version;
                         loaded.loaded_at = std::time::Instant::now();
                         drop(loaded);
+                        state
+                            .stats
+                            .config_reloads
+                            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                         tracing::info!(routes = route_count, "config reloaded");
                     }
                     Err(e) => {

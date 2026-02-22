@@ -1,4 +1,11 @@
 {
+  "actuator": {
+    "enabled": false,
+    "auth": {
+      "username": "admin",
+      "password": "changeme"
+    }
+  },
   "routes": [
     {
       "path": "/api/orders/:id",

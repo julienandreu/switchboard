@@ -1,3 +1,9 @@
+# actuator:
+#   enabled: true
+#   auth:
+#     username: "admin"
+#     password: "changeme"
+
 routes:
   - path: "/api/orders/:id"
     methods: ["GET", "POST"]

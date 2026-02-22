@@ -4,6 +4,7 @@
 //! version, uptime, config source metadata, loaded route/target counts,
 //! and cumulative request statistics.
 
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
 use axum::extract::State;
@@ -68,14 +69,8 @@ pub async fn health_handler(State(state): State<Arc<AppState>>) -> Json<HealthRe
             targets: total_targets,
         },
         stats: StatsResponse {
-            requests_forwarded: state
-                .stats
-                .forwarded
-                .load(std::sync::atomic::Ordering::Relaxed),
-            requests_failed: state
-                .stats
-                .failed
-                .load(std::sync::atomic::Ordering::Relaxed),
+            requests_forwarded: state.stats.forwarded.load(Ordering::Relaxed),
+            requests_failed: state.stats.failed.load(Ordering::Relaxed),
         },
     })
 }

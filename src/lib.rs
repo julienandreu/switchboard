@@ -32,6 +32,7 @@
 //! | `postgres` | PostgreSQL config backend |
 //! | `mongodb` | MongoDB config backend |
 //! | `sqlite` | SQLite config backend |
+//! | `actuator` | Spring Boot-style actuator endpoints |
 //! | `sentry-integration` | Sentry error tracking |
 //! | `file-backends` | All file format backends |
 //! | `db-backends` | All database backends |
@@ -40,6 +41,8 @@
 // Binary crate — public functions are internal, not consumed by external users.
 #![allow(clippy::missing_errors_doc)]
 
+#[cfg(feature = "actuator")]
+pub mod actuator;
 pub mod cli;
 pub mod cmd;
 pub mod config;

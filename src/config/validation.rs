@@ -18,6 +18,46 @@ const VALID_METHODS: &[&str] = &[
 pub fn validate(config: &Config) -> Result<(), Vec<ValidationError>> {
     let mut errors = Vec::new();
 
+    // Validate actuator auth: both username and password must be set together
+    let auth = &config.actuator.auth;
+    match (&auth.username, &auth.password) {
+        (Some(u), Some(p)) => {
+            if u.is_empty() {
+                errors.push(ValidationError {
+                    route: "(root)".into(),
+                    field: "actuator.auth.username".into(),
+                    message: "username cannot be empty when auth is configured".into(),
+                    suggestion: None,
+                });
+            }
+            if p.is_empty() {
+                errors.push(ValidationError {
+                    route: "(root)".into(),
+                    field: "actuator.auth.password".into(),
+                    message: "password cannot be empty when auth is configured".into(),
+                    suggestion: None,
+                });
+            }
+        }
+        (Some(_), None) => {
+            errors.push(ValidationError {
+                route: "(root)".into(),
+                field: "actuator.auth.password".into(),
+                message: "password is required when username is set".into(),
+                suggestion: None,
+            });
+        }
+        (None, Some(_)) => {
+            errors.push(ValidationError {
+                route: "(root)".into(),
+                field: "actuator.auth.username".into(),
+                message: "username is required when password is set".into(),
+                suggestion: None,
+            });
+        }
+        (None, None) => {}
+    }
+
     if config.routes.is_empty() {
         errors.push(ValidationError {
             route: "(root)".into(),
@@ -193,6 +233,7 @@ mod tests {
 
     fn minimal_config() -> Config {
         Config {
+            actuator: Default::default(),
             defaults: Defaults::default(),
             routes: vec![Route {
                 path: "/test".into(),
@@ -216,6 +257,7 @@ mod tests {
     #[test]
     fn empty_routes_fails() {
         let config = Config {
+            actuator: Default::default(),
             defaults: Defaults::default(),
             routes: vec![],
         };
@@ -227,6 +269,7 @@ mod tests {
     #[test]
     fn empty_targets_fails() {
         let config = Config {
+            actuator: Default::default(),
             defaults: Defaults::default(),
             routes: vec![Route {
                 path: "/test".into(),
@@ -245,6 +288,7 @@ mod tests {
     #[test]
     fn multiple_primaries_fails() {
         let config = Config {
+            actuator: Default::default(),
             defaults: Defaults::default(),
             routes: vec![Route {
                 path: "/test".into(),
@@ -272,6 +316,7 @@ mod tests {
     #[test]
     fn invalid_url_fails() {
         let config = Config {
+            actuator: Default::default(),
             defaults: Defaults::default(),
             routes: vec![Route {
                 path: "/test".into(),
@@ -292,6 +337,7 @@ mod tests {
     #[test]
     fn path_without_slash_fails() {
         let config = Config {
+            actuator: Default::default(),
             defaults: Defaults::default(),
             routes: vec![Route {
                 path: "test".into(),
@@ -314,6 +360,7 @@ mod tests {
     #[test]
     fn invalid_method_fails() {
         let config = Config {
+            actuator: Default::default(),
             defaults: Defaults::default(),
             routes: vec![Route {
                 path: "/test".into(),
