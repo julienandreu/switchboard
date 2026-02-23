@@ -44,6 +44,13 @@ const YAML_FULL: &str = r#"# Switchboard config — https://github.com/julienand
 #
 # All values shown are defaults. Uncomment and modify as needed.
 
+# Actuator endpoints (requires --features actuator at build time)
+# actuator:
+#   enabled: false
+#   auth:
+#     username: "admin"
+#     password: "changeme"
+
 # Global defaults applied to all routes unless overridden
 defaults:
   # timeout: 5000              # Target timeout in ms
@@ -94,6 +101,13 @@ const JSON_MINIMAL: &str = r#"{
 "#;
 
 const JSON_FULL: &str = r#"{
+  "actuator": {
+    "enabled": false,
+    "auth": {
+      "username": "admin",
+      "password": "changeme"
+    }
+  },
   "defaults": {
     "timeout": 5000,
     "forward_headers": true,
@@ -127,6 +141,13 @@ url = "http://localhost:8080/example"
 const TOML_FULL: &str = r#"# Switchboard config — https://github.com/julienandreu/switchboard
 #
 # All values shown are defaults. Uncomment and modify as needed.
+
+# Actuator endpoints (requires --features actuator at build time)
+# [actuator]
+# enabled = false
+# [actuator.auth]
+# username = "admin"
+# password = "changeme"
 
 [defaults]
 # timeout = 5000

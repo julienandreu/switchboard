@@ -1,6 +1,7 @@
 target/
 .git/
 .github/
+.cargo-husky/
 .gitignore
 .dockerignore
 Dockerfile

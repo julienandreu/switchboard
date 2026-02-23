@@ -1,6 +1,16 @@
 # Switchboard — Full configuration example
 # https://github.com/julienandreu/switchboard
 
+# Actuator endpoints (requires --features actuator at build time)
+# Provides Spring Boot-style operational monitoring under /actuator:
+#   health probes, metrics, build info, environment, loggers, config, mappings.
+# Can be toggled at runtime via config hot-reload.
+actuator:
+  enabled: true
+  # auth:
+  #   username: "admin"
+  #   password: "changeme"
+
 defaults:
   timeout: 5000
   forward_headers: true

@@ -11,6 +11,7 @@ use switchboard::server::{self, AppState, LoadedConfig, Stats};
 
 fn test_config() -> Config {
     Config {
+        actuator: Default::default(),
         defaults: Defaults::default(),
         routes: vec![Route {
             path: "/test".into(),
@@ -28,6 +29,24 @@ fn test_config() -> Config {
 
 async fn start_test_server() -> (SocketAddr, tokio::sync::oneshot::Sender<()>) {
     let config = test_config();
+
+    #[cfg(feature = "actuator")]
+    let state = Arc::new(AppState {
+        config: tokio::sync::RwLock::new(LoadedConfig {
+            config: Arc::new(config),
+            version: ConfigVersion::Hash("test-hash".into()),
+            source_name: "test".into(),
+            loaded_at: Instant::now(),
+        }),
+        http_client: server::build_http_client(),
+        start_time: Instant::now(),
+        namespace: "test".into(),
+        stats: Stats::new(),
+        log_reload_handle: None,
+        current_log_level: tokio::sync::RwLock::new("INFO".into()),
+    });
+
+    #[cfg(not(feature = "actuator"))]
     let state = Arc::new(AppState {
         config: tokio::sync::RwLock::new(LoadedConfig {
             config: Arc::new(config),

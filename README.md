@@ -6,7 +6,7 @@
 
 HTTP request broadcasting proxy. Receives incoming requests and fans them out to multiple downstream targets.
 
-Built in Rust for minimal binary size (~2-3 MiB) and maximum throughput. Runs as a single static binary from a `scratch` Docker image.
+Built in Rust for minimal binary size (~2-3 MiB) and maximum throughput. Runs as a single static binary from a `scratch` Docker image. Includes optional [Spring Boot-style actuator endpoints](#actuator-endpoints) for operational monitoring.
 
 ## Quick Start
 
@@ -34,6 +34,12 @@ Client ──> Switchboard ──┬──> Target A (primary, response returned
 ## Config
 
 ```yaml
+actuator:
+  enabled: true
+  auth:
+    username: "admin"
+    password: "changeme"
+
 defaults:
   timeout: 5000
 
@@ -116,6 +122,9 @@ cargo build --release
 # All file formats
 cargo build --release --features file-backends
 
+# With actuator endpoints
+cargo build --release --features actuator
+
 # Everything
 cargo build --release --features full
 ```
@@ -130,6 +139,7 @@ cargo build --release --features full
 | `postgres` | PostgreSQL config backend |
 | `mongodb` | MongoDB config backend |
 | `sqlite` | SQLite config backend |
+| `actuator` | Spring Boot-style actuator endpoints (zero extra deps) |
 | `sentry-integration` | Sentry error tracking |
 | `file-backends` | All file formats |
 | `db-backends` | All database backends |
@@ -200,14 +210,110 @@ routes:
 }
 ```
 
+This endpoint is always available regardless of the `actuator` feature flag.
+
+## Actuator Endpoints
+
+Requires `--features actuator` at build time and `actuator.enabled: true` in config. Provides Spring Boot-style endpoints for operational monitoring under `/actuator`.
+
+```yaml
+actuator:
+  enabled: true   # can be toggled via config hot-reload
+  auth:
+    username: "admin"
+    password: "changeme"
+```
+
+When `auth` is configured, all `/actuator/*` endpoints require HTTP Basic Authentication. Without `auth`, endpoints are open (backward-compatible).
+
+Credentials can also be set via environment variables, which override config file values:
+
+| Env Var | Description |
+|---------|-------------|
+| `ACTUATOR_AUTH_USERNAME` | Basic auth username |
+| `ACTUATOR_AUTH_PASSWORD` | Basic auth password |
+
+### Discovery
+
+`GET /actuator` returns HATEOAS-style links to all available endpoints.
+
+### Health Probes
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /actuator/health` | Overall health with component breakdown |
+| `GET /actuator/health/liveness` | Kubernetes liveness probe (UP if running) |
+| `GET /actuator/health/readiness` | Kubernetes readiness probe (UP if routes loaded, 503 otherwise) |
+
+```json
+{
+  "status": "UP",
+  "components": {
+    "liveness": { "status": "UP" },
+    "readiness": {
+      "status": "UP",
+      "details": { "config_source": "yaml", "routes_loaded": 5 }
+    }
+  }
+}
+```
+
+### Info
+
+`GET /actuator/info` returns build metadata (app version, git commit/branch, Rust version, enabled feature flags, build timestamp).
+
+### Environment
+
+`GET /actuator/env` returns environment variables. Sensitive values (passwords, secrets, tokens, keys, DSNs, credentials) are automatically masked.
+
+### Metrics
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /actuator/metrics` | List available metric names |
+| `GET /actuator/metrics/{name}` | Get individual metric value |
+
+Available metrics: `requests.forwarded`, `requests.failed`, `requests.active`, `config.reloads`, `uptime.seconds`.
+
+### Configuration & Mappings
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /actuator/configprops` | Current loaded configuration |
+| `GET /actuator/mappings` | All route-to-target mappings |
+
+### Loggers
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /actuator/loggers` | Current log level |
+| `POST /actuator/loggers` | Change log level at runtime |
+
+```bash
+# Change log level without restart
+curl -X POST http://localhost:3000/actuator/loggers \
+  -H "Content-Type: application/json" \
+  -d '{"configuredLevel": "DEBUG"}'
+```
+
+Supported levels: `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`.
+
 ## Docker
 
 ```dockerfile
-FROM rust:1.85-slim AS builder
-ARG FEATURES="yaml"
+FROM rust:1.85-alpine AS builder
+ARG FEATURES="full"
+ARG GIT_HASH="unknown"
+ARG GIT_SHORT="unknown"
+ARG GIT_BRANCH="unknown"
+RUN apk add --no-cache musl-dev build-base
 WORKDIR /build
 COPY Cargo.toml Cargo.lock ./
+COPY build.rs ./
 COPY src/ src/
+ENV SWITCHBOARD_GIT_HASH_OVERRIDE=${GIT_HASH}
+ENV SWITCHBOARD_GIT_SHORT_OVERRIDE=${GIT_SHORT}
+ENV SWITCHBOARD_GIT_BRANCH_OVERRIDE=${GIT_BRANCH}
 RUN cargo build --release --features "${FEATURES}"
 
 FROM scratch
@@ -217,11 +323,22 @@ CMD ["run"]
 ```
 
 ```bash
-# Minimal image (~2-3 MiB)
+# Minimal image (YAML only, ~2-3 MiB)
 docker build --build-arg FEATURES="yaml" -t switchboard .
 
-# With Redis support
-docker build --build-arg FEATURES="yaml,redis" -t switchboard .
+# Full features (default)
+docker build -t switchboard .
+
+# With actuator endpoints
+docker build --build-arg FEATURES="yaml,actuator" -t switchboard .
+
+# With git metadata (for /actuator/info)
+docker build \
+  --build-arg FEATURES="yaml,actuator" \
+  --build-arg GIT_HASH="$(git rev-parse HEAD)" \
+  --build-arg GIT_SHORT="$(git rev-parse --short HEAD)" \
+  --build-arg GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD)" \
+  -t switchboard .
 
 # Run
 docker run -p 3000:3000 -v ./routes.yaml:/config.yaml switchboard run -c /config.yaml
