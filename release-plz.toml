@@ -1,0 +1,23 @@
+[workspace]
+# Do not publish to crates.io (standalone binary)
+publish = false
+# Skip semver API checks (binary, not a library)
+semver_check = false
+
+# Git tagging
+git_tag_enable = true
+git_tag_name = "v{{ version }}"
+
+# GitHub Releases
+git_release_enable = true
+git_release_name = "v{{ version }}"
+git_release_draft = false
+
+# Changelog
+changelog_update = true
+
+# Release PR
+pr_labels = ["release"]
+
+# Version bumping (while in 0.x, features bump patch, not minor)
+features_always_increment_minor = false

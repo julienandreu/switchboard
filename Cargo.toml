@@ -77,6 +77,8 @@ bytes = "1"
 
 # CLI
 clap = { version = "4", features = ["derive", "env"] }
+dialoguer = { version = "0.12", default-features = false, features = ["password"] }
+console = "0.15"
 
 # Serialization
 serde = { version = "1", features = ["derive"] }

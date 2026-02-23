@@ -130,14 +130,26 @@ chore: update dependencies
 2. Write tests for new functionality
 3. Ensure all checks pass: `cargo test`, `cargo clippy --all-features -- -D warnings`, `cargo fmt --check`
 4. Keep PRs focused — one feature or fix per PR
-5. Update `CHANGELOG.md` under `[Unreleased]` if the change is user-facing
+5. `CHANGELOG.md` is automatically generated — no manual updates needed
 
 ## Release Process
 
-1. Update the version in `Cargo.toml`
-2. Move `[Unreleased]` entries in `CHANGELOG.md` to a new `[x.y.z]` section with the release date
-3. Add a fresh empty `[Unreleased]` section at the top
-4. Update the comparison links at the bottom of `CHANGELOG.md`
-5. Commit as `release: vx.y.z`
-6. Tag with `git tag vx.y.z`
-7. Push the tag: `git push origin vx.y.z`
+Releases are fully automated via [release-plz](https://release-plz.dev/) and driven by Conventional Commits.
+
+**How it works:**
+
+1. Push commits to `main` (directly or by merging a PR)
+2. release-plz automatically opens (or updates) a **Release PR** containing:
+   - Bumped version in `Cargo.toml` (based on commit types: `fix:` = patch, `feat:` = minor, `BREAKING CHANGE` = major)
+   - Updated `CHANGELOG.md` with grouped, linked entries
+3. Review and merge the Release PR
+4. release-plz automatically creates:
+   - A git tag (`v1.2.3`)
+   - A GitHub Release with the changelog as the release body
+
+**Configuration files:**
+
+- `release-plz.toml` — release-plz settings (publishing, tagging, PR options)
+- `cliff.toml` — changelog template and commit parsing rules (used by git-cliff under the hood)
+
+**Manual override:** To force a specific version bump, include `BREAKING CHANGE` in a commit footer for major, or use `feat:` / `fix:` prefixes as usual.
