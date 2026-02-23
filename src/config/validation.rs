@@ -11,9 +11,50 @@ use url::Url;
 use super::model::Config;
 use crate::error::ValidationError;
 
-const VALID_METHODS: &[&str] = &[
+pub const VALID_METHODS: &[&str] = &[
     "GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS", "*",
 ];
+
+/// Validate a single route path. Returns `Ok(())` or a human-readable error.
+pub fn validate_path(path: &str) -> Result<(), String> {
+    if path.is_empty() {
+        return Err("path cannot be empty".into());
+    }
+    if !path.starts_with('/') && path != "*" {
+        return Err(format!(
+            "path must start with '/' or be '*' (did you mean '/{path}'?)"
+        ));
+    }
+    Ok(())
+}
+
+/// Validate a single target URL. Returns `Ok(())` or a human-readable error.
+pub fn validate_target_url(url: &str) -> Result<(), String> {
+    let test_url = replace_params_for_validation(url);
+    match Url::parse(&test_url) {
+        Ok(parsed) => {
+            let scheme = parsed.scheme();
+            if scheme != "http" && scheme != "https" {
+                Err(format!(
+                    "unsupported scheme '{scheme}' (expected http or https)"
+                ))
+            } else {
+                Ok(())
+            }
+        }
+        Err(_) => Err(format!("'{url}' is not a valid URL")),
+    }
+}
+
+/// Validate an HTTP method string. Returns `Ok(())` or a human-readable error.
+pub fn validate_method(method: &str) -> Result<(), String> {
+    let upper = method.to_uppercase();
+    if VALID_METHODS.contains(&upper.as_str()) {
+        Ok(())
+    } else {
+        Err(format!("'{method}' is not a valid HTTP method"))
+    }
+}
 
 pub fn validate(config: &Config) -> Result<(), Vec<ValidationError>> {
     let mut errors = Vec::new();
@@ -77,19 +118,16 @@ pub fn validate(config: &Config) -> Result<(), Vec<ValidationError>> {
             route.path.clone()
         };
 
-        if route.path.is_empty() {
+        if let Err(msg) = validate_path(&route.path) {
             errors.push(ValidationError {
                 route: route_id.clone(),
                 field: "path".into(),
-                message: "path cannot be empty".into(),
-                suggestion: None,
-            });
-        } else if !route.path.starts_with('/') && route.path != "*" {
-            errors.push(ValidationError {
-                route: route_id.clone(),
-                field: "path".into(),
-                message: "path must start with '/' or be '*'".into(),
-                suggestion: Some(format!("did you mean '/{}'?", route.path)),
+                message: msg,
+                suggestion: if !route.path.is_empty() && !route.path.starts_with('/') {
+                    Some(format!("did you mean '/{}'?", route.path))
+                } else {
+                    None
+                },
             });
         }
 
@@ -103,12 +141,11 @@ pub fn validate(config: &Config) -> Result<(), Vec<ValidationError>> {
         }
 
         for method in &route.methods {
-            let upper = method.to_uppercase();
-            if !VALID_METHODS.contains(&upper.as_str()) {
+            if let Err(msg) = validate_method(method) {
                 errors.push(ValidationError {
                     route: route_id.clone(),
                     field: "methods".into(),
-                    message: format!("'{method}' is not a valid HTTP method"),
+                    message: msg,
                     suggestion: None,
                 });
             }
@@ -134,31 +171,13 @@ pub fn validate(config: &Config) -> Result<(), Vec<ValidationError>> {
         }
 
         for target in &route.targets {
-            // Replace all :param placeholders with a valid path segment for URL validation
-            let test_url = replace_params_for_validation(&target.url);
-            match Url::parse(&test_url) {
-                Ok(parsed) => {
-                    let scheme = parsed.scheme();
-                    if scheme != "http" && scheme != "https" {
-                        errors.push(ValidationError {
-                            route: route_id.clone(),
-                            field: "targets.url".into(),
-                            message: format!(
-                                "'{}' uses unsupported scheme '{}' (expected http or https)",
-                                target.url, scheme
-                            ),
-                            suggestion: None,
-                        });
-                    }
-                }
-                Err(_) => {
-                    errors.push(ValidationError {
-                        route: route_id.clone(),
-                        field: "targets.url".into(),
-                        message: format!("'{}' is not a valid URL", target.url),
-                        suggestion: None,
-                    });
-                }
+            if let Err(msg) = validate_target_url(&target.url) {
+                errors.push(ValidationError {
+                    route: route_id.clone(),
+                    field: "targets.url".into(),
+                    message: msg,
+                    suggestion: None,
+                });
             }
         }
     }

@@ -154,6 +154,10 @@ pub struct RunArgs {
 }
 
 #[derive(Args)]
+#[command(after_help = "\x1b[1mExamples:\x1b[0m\n  \
+        switchboard init                          Quick start config (yaml)\n  \
+        switchboard init -i                       Interactive wizard\n  \
+        switchboard init -f toml -o config.toml   Non-interactive, TOML format")]
 pub struct InitArgs {
     /// Output format
     #[arg(short, long, default_value = "yaml")]
@@ -163,9 +167,13 @@ pub struct InitArgs {
     #[arg(short, long)]
     pub output: Option<PathBuf>,
 
-    /// Include full documentation as comments
-    #[arg(long)]
+    /// Include full documentation as comments (non-interactive only)
+    #[arg(long, conflicts_with = "interactive")]
     pub full: bool,
+
+    /// Launch interactive wizard to build config step by step
+    #[arg(short, long)]
+    pub interactive: bool,
 }
 
 #[derive(Args)]

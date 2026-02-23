@@ -1,14 +1,14 @@
-//! `switchboard init` — generate a starter configuration file.
+//! Template-based config generation (non-interactive mode).
 //!
-//! Creates a YAML, JSON, or TOML config file with either minimal
-//! or fully documented templates.
+//! Writes a static YAML, JSON, or TOML starter file with either
+//! minimal or fully documented content.
 
 use std::path::PathBuf;
 
 use crate::cli::{ConfigFormat, InitArgs};
 use crate::error::SwitchboardError;
 
-pub fn execute(args: &InitArgs) -> Result<(), SwitchboardError> {
+pub fn run(args: &InitArgs) -> Result<(), SwitchboardError> {
     let output = args
         .output
         .clone()
