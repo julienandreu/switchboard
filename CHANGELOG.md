@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2](https://github.com/julienandreu/switchboard/compare/v0.1.1...v0.1.2) - 2026-02-23
+
+### Added
+
+- setup changelog and dynamic version
+- add actuators with credentials
+
+### Fixed
+
+- improve docker config
+
+### Other
+
+- release v0.1.1
+- convert project to rust
+- initial setup from gitlab repo
+
 ## [0.1.1](https://github.com/julienandreu/switchboard/compare/v0.1.0...v0.1.1) - 2026-02-23
 
 ### Added
